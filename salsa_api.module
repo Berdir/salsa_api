@@ -163,7 +163,7 @@ function salsa_api_query($query_info) {
       if ($query_info['#limit']) {
         $build_query_array['limit'] = $query_info['#limit'];
       }
-      if ($query_info['#include']) {
+      if ($query_info['#fields']) {
         $build_query_array['include'] = $query_info['#fields'];
       }
       if ($query_info['#order']) {
@@ -182,6 +182,7 @@ function salsa_api_query($query_info) {
           $query .= $item .'='. $value .'&';
         }
       }
+      break;
     case 'getObject.sjs':
       $script = '/api/'. $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
@@ -196,6 +197,7 @@ function salsa_api_query($query_info) {
           $query .= $item .'='. $value .'&';
         }
       }
+      break;
     case 'getObjects.sjs':
       $script = '/api/'. $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
@@ -205,7 +207,7 @@ function salsa_api_query($query_info) {
       if ($query_info['#limit']) {
         $build_query_array['limit'] = $query_info['#limit'];
       }
-      if ($query_info['#include']) {
+      if ($query_info['#fields']) {
         $build_query_array['include'] = $query_info['#fields'];
       }
       if ($query_info['#order']) {
@@ -224,6 +226,7 @@ function salsa_api_query($query_info) {
           $query .= $item .'='. $value .'&';
         }
       }
+      break;
     case 'getCount.sjs':
       $script = '/api/'. $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
@@ -241,6 +244,7 @@ function salsa_api_query($query_info) {
           $query .= $item .'='. $value .'&';
         }
       }
+      break;
     case 'getCounts.sjs':
       $script = '/api/'. $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
@@ -267,7 +271,10 @@ function salsa_api_query($query_info) {
           $query .= $item .'='. $value .'&';
         }
       }
+      break;
     case 'save':
+      $script = '/'. $query_info['#script'];
+      $query = 'xml&';
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['fields'] = $query_info['#fields'];
       if ($query_info['#links']) {
@@ -275,14 +282,16 @@ function salsa_api_query($query_info) {
       }
       foreach ($build_query_array as $item => $value) {
         if (is_array($value)) {
-          if ($value['links']) {
-            foreach ($value as $i => $v) {
-              $query .= 'link='. $item .'&linkKey='. $v .'&';
+          if ($item == 'links') {
+            foreach ($value as $table => $links) {
+              foreach ($links as $key) {
+                $query .= 'link='. $table .'&linkKey='. $key .'&';
+              }
             }
           }
           else {
             foreach ($value as $i => $v) {
-              $query .= $item .'='. $v .'&';
+              $query .= $i .'='. $v .'&';
             }
           }
         }
@@ -290,7 +299,10 @@ function salsa_api_query($query_info) {
           $query .= $item .'='. $value .'&';
         }
       }
+      break;
     case 'delete':
+      $script = '/'. $query_info['#script'];
+      $query = 'xml&';
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
       foreach ($build_query_array as $item => $value) {
@@ -303,7 +315,10 @@ function salsa_api_query($query_info) {
           $query .= $item .'='. $value .'&';
         }
       }
+      break;
     case 'copy':
+      $script = '/'. $query_info['#script'];
+      $query = 'xml&';
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
       foreach ($build_query_array as $item => $value) {
@@ -316,8 +331,10 @@ function salsa_api_query($query_info) {
           $query .= $item .'='. $value .'&';
         }
       }
+      break;
     case 'email':
       // to-do
+      break;
   }
   $query_result = salsa_api_curl_query(array('#script' => $script, '#query' => $query));
   if (preg_match("<div class='sjs error'>", $query_result)) {
