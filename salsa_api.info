@@ -2,5 +2,4 @@
 name = Salsa API
 description = Provides an API to allow drupal to communicate with Democracy in Action's Salsa Member Database.
 core = 6.x
-version = "6.x-1.x-dev"
 package = Salsa

@@ -1,4 +1,5 @@
-$Id
+# $Id$
+
 Here's some quick info to get you started:
 
 There is one function that you will primarily deal with, salsa_api_query($query).
@@ -86,7 +87,7 @@ Basically the same as getObjects.sjs, but allows information to be retrieved fro
 
 getObject.sjs:
 Takes 2 parameters: object(#table) and key(#fields). Object is the name of the object, such as supporter. Key is the object key.
-ex: 
+ex:
 $query = array(
   '#script' => 'getObject.sjs',
   '#tables' => 'email_blast',
@@ -103,6 +104,10 @@ getCounts.sjs:
 takes parameters: object, groupBy, condition, countColumn, orderBy, limit
 
 Counts by group, or subset, is also a frequently used query. This is analogous to a SQL query with a "count(*)" , and one or many "group by" fields.
+
+getReport.sjs:
+Returns the results of a report that exists in salsa, ether an existing salsa report or one the user has created.
+takes paramameter: report_KEY(#fields), ex: query = array('#script' => 'getReport.sjs', '#fields' => '1234');
 
 ---------------------------
 Saving Data

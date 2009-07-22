@@ -3,7 +3,7 @@
 /**
  * @file
  * Module that provides other modules a way to query salsa data.
- * 
+ *
  * This module does not provide any visible functionality on its own, it just
  * provides an API that other modules can use to query data in salsa.
  */
@@ -18,7 +18,7 @@ function salsa_api_perm() {
 /**
  * Implementation of hook_sytem_settings().
  */
-function salsa_api_system_settings() { 
+function salsa_api_system_settings() {
   $form = array();
   $form['salsa_api_url'] = array(
     '#type' => 'textfield',
@@ -47,16 +47,35 @@ function salsa_api_system_settings() {
 /**
  * Implementation of hook_menu().
  */
-function salsa_api_menu() {  
+function salsa_api_menu() {
   $items = array();
-  $items['admin/settings/salsa'] = array(
+  $items['admin/salsa'] = array(
+    'title' => 'Salsa',
+    'description' => 'Administer items related to the salsa module.',
+    'position' => 'left',
+    'weight' => -10,
+    'page callback' => 'salsa_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+  );
+  $items['admin/salsa/api'] = array(
     'title' => t('Salsa API Configuration'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('salsa_api_system_settings'),
     'access arguments' => array('administer salsa api'),
     'description' => t('Salsa API Configuration Options')
-  ); 
+  );
   return $items;
+}
+
+function salsa_admin_menu_block_page() {
+  $item = menu_get_item();
+  if ($content = system_admin_menu_block($item)) {
+    $output = theme('admin_block_content', $content);
+  }
+  else {
+    $output = t('You do not have any administrative items.');
+  }
+  return $output;
 }
 
 /**
@@ -86,12 +105,13 @@ function salsa_api_curl_connect($user_connect) {
   $connection = curl_init();
   curl_setopt($connection, CURLOPT_POST, 1);
   curl_setopt($connection, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($connection, CURLOPT_TIMEOUT, 10000);
+  curl_setopt($connection, CURLOPT_CONNECTTIMEOUT, 10);
+  curl_setopt($connection, CURLOPT_TIMEOUT, 10);
   curl_setopt($connection, CURLOPT_COOKIESESSION, TRUE);
 //Development: on windows dev server the certificate check fails, so we
 //disable the check.
   curl_setopt($connection, CURLOPT_SSL_VERIFYPEER, 0);
-  
+
   curl_setopt($connection, CURLOPT_COOKIEFILE, '/'. $temp_dir .'/cookies_file');
   curl_setopt($connection, CURLOPT_COOKIEJAR, '/'. $temp_dir .'/cookies_file');
   curl_setopt($connection, CURLOPT_URL, $user_connect['url'] ."/api/authenticate.sjs");
@@ -132,7 +152,7 @@ function salsa_api_curl_query($curl_query) {
 
 /**
  * Bulid and then run a query against the DIA/Salsa database.
- * 
+ *
  * @param query_info
  * The query information (array) that needs to be built and then run.
  * The query builder expects an array that looks like this (not all values are
@@ -271,6 +291,10 @@ function salsa_api_query($query_info) {
           $query .= $item .'='. $value .'&';
         }
       }
+      break;
+    case 'getReport.sjs':
+      $script = '/api/'. $query_info['#script'];
+      $query = 'report_KEY='. $query_info['#fields'];
       break;
     case 'save':
       $script = '/'. $query_info['#script'];

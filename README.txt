@@ -1,4 +1,5 @@
-$Id
+# $Id$
+
 This is just a quick and dirty readme:
 
 Requires a salsa campaign manager login and a webserver that supports cURL.
