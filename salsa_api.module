@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file
  * Module that provides other modules a way to query salsa data.

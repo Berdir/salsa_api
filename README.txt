@@ -1,4 +1,3 @@
-# $Id$
 
 This is just a quick and dirty readme:
 
