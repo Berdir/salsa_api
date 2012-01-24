@@ -72,7 +72,9 @@ function salsa_api_menu() {
   );
   return $items;
 }
-
+/**
+ * Menu callback
+ */
 function salsa_admin_menu_block_page() {
   $item = menu_get_item();
   if ($content = system_admin_menu_block($item)) {
@@ -87,8 +89,8 @@ function salsa_admin_menu_block_page() {
 /**
  * Create an array with the user connection information.
  *
- * @return user_connect
- * Returns an array with the connection information.
+ * @return array user_connect
+ *   An array with the connection information.
  */
 function salsa_api_user_connect() {
   $user_connect = array();
@@ -101,10 +103,11 @@ function salsa_api_user_connect() {
 /**
  * Setup and open a connection using cURL.
  *
- * @param user_connect
- * The array containing connection information.
- * @return connection
- * Returns the configured cURL object.
+ * @param array $user_connect
+ *   Array containing connection information.
+ *   
+ * @return string
+ *   The configured cURL object.
  */
 function salsa_api_curl_connect($user_connect) {
   $temp_dir = file_directory_temp();
@@ -118,10 +121,10 @@ function salsa_api_curl_connect($user_connect) {
 //disable the check.
   curl_setopt($connection, CURLOPT_SSL_VERIFYPEER, 0);
 
-  curl_setopt($connection, CURLOPT_COOKIEFILE, '/'. $temp_dir .'/cookies_file');
-  curl_setopt($connection, CURLOPT_COOKIEJAR, '/'. $temp_dir .'/cookies_file');
-  curl_setopt($connection, CURLOPT_URL, $user_connect['url'] ."/api/authenticate.sjs");
-  curl_setopt($connection, CURLOPT_POSTFIELDS, "email=". $user_connect['username'] ."&password=". $user_connect['password']);
+  curl_setopt($connection, CURLOPT_COOKIEFILE, '/' . $temp_dir . '/cookies_file');
+  curl_setopt($connection, CURLOPT_COOKIEJAR, '/' . $temp_dir . '/cookies_file');
+  curl_setopt($connection, CURLOPT_URL, $user_connect['url'] . "/api/authenticate.sjs");
+  curl_setopt($connection, CURLOPT_POSTFIELDS, "email=" . $user_connect['username'] . "&password=" . $user_connect['password']);
   $auth = curl_exec($connection);
   drupal_set_message(t(curl_error($connection)), 'error');
   return $connection;
@@ -130,8 +133,8 @@ function salsa_api_curl_connect($user_connect) {
 /**
  * Close an existing cURL connection.
  *
- * @param connection
- * The current cURL object that we want to disconnect from.
+ * @param string $connection
+ *   The current cURL object that we want to disconnect from.
  */
 function salsa_api_curl_disconnect($connection) {
   curl_close($connection);
@@ -140,10 +143,11 @@ function salsa_api_curl_disconnect($connection) {
 /**
  * Run a query against salsa using cURL
  *
- * @param curl_query
- * An array containing the script and a formatted query.
- * @return curl_query_result
- * Returns the raw result of the cURL query.
+ * @param array $curl_query
+ *   An array containing the script and a formatted query.
+ *   
+ * @return string
+ *   The raw result of the cURL query.
  */
 function salsa_api_curl_query($curl_query) {
   $user_connect = salsa_api_user_connect();
@@ -173,14 +177,15 @@ function salsa_api_curl_query($curl_query) {
  *  '#group' => '',
  *  '#links' => ''
  * );
- * @return query_result
- * Returns an array of the result.
+ * 
+ * @return array
+ *   An array of the result returned from Salsa.
  */
 function salsa_api_query($query_info) {
   //dpm($query_info, "salsa_api query");
   switch ($query_info['#script']) {
     case 'getLeftJoin.sjs':
-      $script = '/api/'. $query_info['#script'];
+      $script = '/api/' . $query_info['#script'];
       if (isset($query_info['#tables'])) {
         $build_query_array['object'] = $query_info['#tables'];
       }
@@ -202,31 +207,31 @@ function salsa_api_query($query_info) {
       foreach ($build_query_array as $item => $value) {
         if (is_array($value)) {
           foreach ($value as $i => $v) {
-            $query .= $item .'='. $v .'&';
+            $query .= $item . '=' . $v . '&';
           }
         }
         else {
-          $query .= $item .'='. $value .'&';
+          $query .= $item . '=' . $value . '&';
         }
       }
       break;
     case 'getObject.sjs':
-      $script = '/api/'. $query_info['#script'];
+      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
       foreach ($build_query_array as $item => $value) {
         if (is_array($value)) {
           foreach ($value as $i => $v) {
-            $query .= $item .'='. $v .'&';
+            $query .= $item . '=' . $v . '&';
           }
         }
         else {
-          $query .= $item .'='. $value .'&';
+          $query .= $item . '=' . $value . '&';
         }
       }
       break;
     case 'getObjects.sjs':
-      $script = '/api/'. $query_info['#script'];
+      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       if (isset($query_info['#condition'])) {
         $build_query_array['condition'] = $query_info['#condition'];
@@ -247,16 +252,16 @@ function salsa_api_query($query_info) {
       foreach ($build_query_array as $item => $value) {
         if (is_array($value)) {
           foreach ($value as $i => $v) {
-            $query .= $item .'='. $v .'&';
+            $query .= $item . '=' . $v . '&';
           }
         }
         else {
-          $query .= $item .'='. $value .'&';
+          $query .= $item . '=' . $value . '&';
         }
       }
       break;
     case 'getCount.sjs':
-      $script = '/api/'. $query_info['#script'];
+      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       if ($query_info['#condition']) {
         $build_query_array['condition'] = $query_info['#condition'];
@@ -265,16 +270,16 @@ function salsa_api_query($query_info) {
       foreach ($build_query_array as $item => $value) {
         if (is_array($value)) {
           foreach ($value as $i => $v) {
-            $query .= $item .'='. $v .'&';
+            $query .= $item . '=' . $v . '&';
           }
         }
         else {
-          $query .= $item .'='. $value .'&';
+          $query .= $item . '=' . $value . '&';
         }
       }
       break;
     case 'getCounts.sjs':
-      $script = '/api/'. $query_info['#script'];
+      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       if (isset($query_info['#condition'])) {
         $build_query_array['condition'] = $query_info['#condition'];
@@ -292,20 +297,20 @@ function salsa_api_query($query_info) {
       foreach ($build_query_array as $item => $value) {
         if (is_array($value)) {
           foreach ($value as $i => $v) {
-            $query .= $item .'='. $v .'&';
+            $query .= $item . '=' . $v . '&';
           }
         }
         else {
-          $query .= $item .'='. $value .'&';
+          $query .= $item . '=' . $value . '&';
         }
       }
       break;
     case 'getReport.sjs':
-      $script = '/api/'. $query_info['#script'];
-      $query = 'report_KEY='. $query_info['#fields'];
+      $script = '/api/' . $query_info['#script'];
+      $query = 'report_KEY=' . $query_info['#fields'];
       break;
     case 'save':
-      $script = '/'. $query_info['#script'];
+      $script = '/' . $query_info['#script'];
       $query = 'xml&';
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['fields'] = $query_info['#fields'];
@@ -317,50 +322,50 @@ function salsa_api_query($query_info) {
           if ($item == 'links') {
             foreach ($value as $table => $links) {
               foreach ($links as $key) {
-                $query .= 'link='. $table .'&linkKey='. $key .'&';
+                $query .= 'link=' . $table . '&linkKey=' . $key . '&';
               }
             }
           }
           else {
             foreach ($value as $i => $v) {
-              $query .= $i .'='. $v .'&';
+              $query .= $i . '=' . $v . '&';
             }
           }
         }
         else {
-          $query .= $item .'='. $value .'&';
+          $query .= $item . '=' . $value . '&';
         }
       }
       break;
     case 'delete':
-      $script = '/'. $query_info['#script'];
+      $script = '/' . $query_info['#script'];
       $query = 'xml&';
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
       foreach ($build_query_array as $item => $value) {
         if (is_array($value)) {
           foreach ($value as $i => $v) {
-            $query .= $item .'='. $v .'&';
+            $query .= $item . '=' . $v . '&';
           }
         }
         else {
-          $query .= $item .'='. $value .'&';
+          $query .= $item . '=' . $value . '&';
         }
       }
       break;
     case 'copy':
-      $script = '/'. $query_info['#script'];
+      $script = '/' . $query_info['#script'];
       $query = 'xml&';
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
       foreach ($build_query_array as $item => $value) {
         if (is_array($value)) {
           foreach ($value as $i => $v) {
-            $query .= $item .'='. $v .'&';
+            $query .= $item . '=' . $v . '&';
           }
         }
         else {
-          $query .= $item .'='. $value .'&';
+          $query .= $item . '=' . $value . '&';
         }
       }
       break;
@@ -370,7 +375,7 @@ function salsa_api_query($query_info) {
   }
   $query_result = salsa_api_curl_query(array('#script' => $script, '#query' => $query));
   if (preg_match("<div class='sjs error'>", $query_result)) {
-    drupal_set_message(t('Salsa Error Message:'. strip_tags($query_result)), 'error');
+    drupal_set_message(t('Salsa Error Message:' . strip_tags($query_result)), 'error');
     $query_result = 1;
   }
   else {
@@ -383,10 +388,11 @@ function salsa_api_query($query_info) {
  * Convert an XML object into an array. Some XML KEYs returned from Salsa have
  * an "-" in them which makes navigating through an XML object difficult!
  *
- * @param object
- * The xml object that needs to be converted into an array.
- * @return return
- * An array containing the converted xml object.
+ * @param $object
+ *  The xml object that needs to be converted into an array.
+ *  
+ * @return array
+ *   An array containing the converted xml object.
  */
 function salsa_api_object2array($object) {
   $return = NULL;
@@ -405,7 +411,8 @@ function salsa_api_object2array($object) {
     else {
       return $object;
     }
-  } else {
+  }
+  else {
     return $object;
   }
   return $return;
