@@ -447,3 +447,41 @@ function salsa_api_get_object($type, $key) {
   }
   return FALSE;
 }
+
+/**
+ * Load objects from Salsa.
+ *
+ * @param $type
+ *   Type of the objects e.g. supporter or donation.
+ * @param $conditions
+ *   Query conditions as a encoded query string or an array.
+ * @param $query_info
+ *   Query info.
+ *
+ * @return
+ *   The object if it exists, FALSE if not.
+ */
+function salsa_api_get_objects($type, $conditions = NULL, array $query_info = array()) {
+  $query = array(
+    '#script' => 'getObjects.sjs',
+    '#tables' => $type,
+    '#condition' => $conditions,
+  ) + $query_info;
+  $return = salsa_api_query($query);
+
+  // If there are any items, convert them to objects and return.
+  if ($return[$type]['count'] > 0) {
+    $objects = array();
+
+    // If count is 1, item is the object.
+    if ($return[$type]['count'] == 1) {
+      $return[$type]['item'] = array($return[$type]['item']);
+    }
+
+    foreach ($return[$type]['item'] as $item) {
+      $objects[$item['key']] = (object)$item;
+    }
+    return $objects;
+  }
+  return array();
+}
