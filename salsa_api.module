@@ -193,6 +193,7 @@ function salsa_api_query($query_info) {
   //dpm($query_info, "salsa_api query");
 
   $script = '/api/' . $query_info['#script'];
+  $query = '';
   switch ($query_info['#script']) {
     case 'getLeftJoin.sjs':
       if (isset($query_info['#tables'])) {
@@ -419,4 +420,30 @@ function salsa_api_object2array($object) {
     return $object;
   }
   return $return;
+}
+
+/**
+ * Load an object from Salsa.
+ *
+ * @param $type
+ *   Type of the object e.g. supporter or donation.
+ * @param $key
+ *   The object identifier.
+ *
+ * @return
+ *   The object if it exists, FALSE if not.
+ */
+function salsa_api_get_object($type, $key) {
+  $query = array(
+    '#script' => 'getObject.sjs',
+    '#tables' => $type,
+    '#fields' => $key,
+  );
+  $return = salsa_api_query($query);
+
+  // Get the actual object and convert it.
+  if (isset($return[$type]['item']['key'])) {
+    return (object)$return[$type]['item'];
+  }
+  return FALSE;
 }
