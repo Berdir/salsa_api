@@ -191,9 +191,10 @@ function salsa_api_curl_query($curl_query) {
  */
 function salsa_api_query($query_info) {
   //dpm($query_info, "salsa_api query");
+
+  $script = '/api/' . $query_info['#script'];
   switch ($query_info['#script']) {
     case 'getLeftJoin.sjs':
-      $script = '/api/' . $query_info['#script'];
       if (isset($query_info['#tables'])) {
         $build_query_array['object'] = $query_info['#tables'];
       }
@@ -224,7 +225,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'getObject.sjs':
-      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
       foreach ($build_query_array as $item => $value) {
@@ -239,7 +239,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'getObjects.sjs':
-      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       if (isset($query_info['#condition'])) {
         $build_query_array['condition'] = $query_info['#condition'];
@@ -269,7 +268,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'getCount.sjs':
-      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       if ($query_info['#condition']) {
         $build_query_array['condition'] = $query_info['#condition'];
@@ -287,7 +285,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'getCounts.sjs':
-      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       if (isset($query_info['#condition'])) {
         $build_query_array['condition'] = $query_info['#condition'];
@@ -346,7 +343,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'delete':
-      $script = '/' . $query_info['#script'];
       $query = 'xml&';
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
@@ -362,7 +358,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'copy':
-      $script = '/' . $query_info['#script'];
       $query = 'xml&';
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
