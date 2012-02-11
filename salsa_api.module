@@ -6,7 +6,7 @@
  * This module does not provide any visible functionality on its own, it just
  * provides an API that other modules can use to query data in salsa.
  *
- * This is an incomplete and unofficial Drupal 7 version. Use at your own risk!
+ * This is a HIGHLY EXPERIMENTAL and unofficial Drupal 7 version! Use at your own risk!
  */
 
 /**
@@ -22,7 +22,7 @@ function salsa_api_permission() {
 }
 
 /**
- * Implements hook_system_settings().
+ * Implements hook_sytem_settings().
  */
 function salsa_api_system_settings($form, &$form_state) {
   //$form = array();
@@ -50,15 +50,9 @@ function salsa_api_system_settings($form, &$form_state) {
   $form['salsa_api_curlopt_timeout'] = array(
     '#type' => 'textfield',
     '#title' => t('Query Timeout'),
-    '#description' => t('Number of seconds before a Salsa API query times out.'),
+    '#description' => t('Number of seconds before a Salsa API query times out'),
     '#default_value' => variable_get('salsa_api_curlopt_timeout', 10),
     '#size' => 4,
-  );
-  $form['salsa_api_debug'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable Debugging'),
-    '#description' => t('Enable debugging messages and watchdog entries.'),
-    '#default_value' => variable_get('salsa_api_debug', 0),    
   );
   return system_settings_form($form);
 }
@@ -68,35 +62,20 @@ function salsa_api_system_settings($form, &$form_state) {
  */
 function salsa_api_menu() {
   $items = array();
-  $items['admin/salsa'] = array(
+  $items['admin/config/services/salsa'] = array(
     'title' => 'Salsa',
-    'description' => 'Administer items related to the salsa module.',
-    'position' => 'left',
-    'weight' => -10,
-    'page callback' => 'salsa_admin_menu_block_page',
-    'access arguments' => array('access administration pages'),
-  );
-  $items['admin/salsa/api'] = array(
-    'title' => 'Salsa API Configuration',
+    'description' => 'Manage and configure the Salsa integration',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('salsa_api_system_settings'),
+    'access arguments' => array('access administration pages'),
+  );
+  $items['admin/config/services/salsa/api'] = array(
+    'title' => 'API settings',
     'access arguments' => array('administer salsa api'),
-    'description' => 'Salsa API Configuration Options',
+    'description' => 'Authentication and API related settings for the Salsa API',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
   );
   return $items;
-}
-/**
- * Menu callback
- */
-function salsa_admin_menu_block_page() {
-  $item = menu_get_item();
-  if ($content = system_admin_menu_block($item)) {
-    $output = theme('admin_block_content', array('content' => $content));
-  }
-  else {
-    $output = t('You do not have any administrative items.');
-  }
-  return $output;
 }
 
 /**
@@ -116,10 +95,10 @@ function salsa_api_user_connect() {
 /**
  * Setup and open a connection using cURL.
  *
- * @param array $user_connect
- *   Array containing connection information.
- *   
- * @return string
+ * @param $user_connect
+ *   Array containing connection information, see salsa_api_user_connect().
+ *
+ * @return
  *   The configured cURL object.
  */
 function salsa_api_curl_connect($user_connect) {
@@ -130,8 +109,8 @@ function salsa_api_curl_connect($user_connect) {
   curl_setopt($connection, CURLOPT_CONNECTTIMEOUT, 10);
   curl_setopt($connection, CURLOPT_TIMEOUT, variable_get('salsa_api_curlopt_timeout', 10));
   curl_setopt($connection, CURLOPT_COOKIESESSION, TRUE);
-//Development: on windows dev server the certificate check fails, so we
-//disable the check.
+  //Development: on windows dev server the certificate check fails, so we
+  //disable the check.
   curl_setopt($connection, CURLOPT_SSL_VERIFYPEER, 0);
 
   curl_setopt($connection, CURLOPT_COOKIEFILE, '/' . $temp_dir . '/cookies_file');
@@ -139,8 +118,18 @@ function salsa_api_curl_connect($user_connect) {
   curl_setopt($connection, CURLOPT_URL, $user_connect['url'] . "/api/authenticate.sjs");
   curl_setopt($connection, CURLOPT_POSTFIELDS, "email=" . $user_connect['username'] . "&password=" . $user_connect['password']);
   $auth = curl_exec($connection);
-  drupal_set_message(t(curl_error($connection)), 'error');
-  return $connection;
+  $response = simplexml_load_string($auth);
+  if ((string) $response->message == 'Successful Login') {
+    return $connection;
+  }
+  else {
+    drupal_set_message(t('Connection to Salsa failed. (@message)', array('@message' => (string) $response->error)), 'error', FALSE);
+    watchdog('salsa', '%url/api/authenticate.sjs?email=**&password=** call result: %reply', array('%url' => $url, '%reply' => $auth), WATCHDOG_ERROR);
+  }
+
+  // Connection failed, close connection.
+  salsa_api_curl_disconnect($connection);
+  return NULL;
 }
 
 /**
@@ -158,19 +147,25 @@ function salsa_api_curl_disconnect($connection) {
  *
  * @param array $curl_query
  *   An array containing the script and a formatted query.
- *   
+ *
  * @return string
  *   The raw result of the cURL query.
  */
 function salsa_api_curl_query($curl_query) {
   $user_connect = salsa_api_user_connect();
   $connection = salsa_api_curl_connect($user_connect);
-  curl_setopt($connection, CURLOPT_URL, $user_connect['url'] . $curl_query['#script']);
-  curl_setopt($connection, CURLOPT_POSTFIELDS, $curl_query['#query']);
-  $curl_query_result = curl_exec($connection);
-  drupal_set_message(t(curl_error($connection)), 'error');
-  salsa_api_curl_disconnect($connection);
-  return $curl_query_result;
+  if ($connection) {
+    curl_setopt($connection, CURLOPT_URL, $user_connect['url'] . $curl_query['#script']);
+    curl_setopt($connection, CURLOPT_POSTFIELDS, $curl_query['#query']);
+    $curl_query_result = curl_exec($connection);
+    if ($error = curl_error($connection)) {
+      drupal_set_message(t('Query to Salsa failed. (@message)', array('@message' => (string) $error)), 'error', FALSE);
+    }
+    else {
+      return $curl_query_result;
+    }
+    salsa_api_curl_disconnect($connection);
+  }
 }
 
 /**
@@ -190,16 +185,17 @@ function salsa_api_curl_query($curl_query) {
  *  '#group' => '',
  *  '#links' => ''
  * );
- * 
+ *
  * @return array
  *   An array of the result returned from Salsa.
  */
 function salsa_api_query($query_info) {
-  $debug = variable_get('salsa_api_debug', 0);
-  if ($debug) dpm($query_info, "salsa_api query");
+  //dpm($query_info, "salsa_api query");
+
+  $script = '/api/' . $query_info['#script'];
+  $query = '';
   switch ($query_info['#script']) {
     case 'getLeftJoin.sjs':
-      $script = '/api/' . $query_info['#script'];
       if (isset($query_info['#tables'])) {
         $build_query_array['object'] = $query_info['#tables'];
       }
@@ -230,7 +226,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'getObject.sjs':
-      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
       foreach ($build_query_array as $item => $value) {
@@ -245,7 +240,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'getObjects.sjs':
-      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       if (isset($query_info['#condition'])) {
         $build_query_array['condition'] = $query_info['#condition'];
@@ -275,7 +269,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'getCount.sjs':
-      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       if ($query_info['#condition']) {
         $build_query_array['condition'] = $query_info['#condition'];
@@ -293,7 +286,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'getCounts.sjs':
-      $script = '/api/' . $query_info['#script'];
       $build_query_array['object'] = $query_info['#tables'];
       if (isset($query_info['#condition'])) {
         $build_query_array['condition'] = $query_info['#condition'];
@@ -352,7 +344,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'delete':
-      $script = '/' . $query_info['#script'];
       $query = 'xml&';
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
@@ -368,7 +359,6 @@ function salsa_api_query($query_info) {
       }
       break;
     case 'copy':
-      $script = '/' . $query_info['#script'];
       $query = 'xml&';
       $build_query_array['object'] = $query_info['#tables'];
       $build_query_array['key'] = $query_info['#fields'];
@@ -387,17 +377,14 @@ function salsa_api_query($query_info) {
       // to-do
       break;
   }
-  if ($debug) dpm ($script, "Script to Salsa");
-  if ($debug) dpm ($query, "Query to Salsa");
   $query_result = salsa_api_curl_query(array('#script' => $script, '#query' => $query));
   if (preg_match("<div class='sjs error'>", $query_result)) {
-    drupal_set_message(t('Salsa Error Message:' . strip_tags($query_result)), 'error');
-    $query_result = 1;
+    drupal_set_message(t('Salsa Error Message: @error', array('@error' => strip_tags($query_result))), 'error');
+    return NULL;
   }
   else {
     $query_result = salsa_api_object2array(simplexml_load_string($query_result));
   }
-  if ($debug) dpm ($query_result, "Result from Salsa");
   return $query_result;
 }
 
@@ -407,7 +394,7 @@ function salsa_api_query($query_info) {
  *
  * @param $object
  *  The xml object that needs to be converted into an array.
- *  
+ *
  * @return array
  *   An array containing the converted xml object.
  */
@@ -433,4 +420,68 @@ function salsa_api_object2array($object) {
     return $object;
   }
   return $return;
+}
+
+/**
+ * Load an object from Salsa.
+ *
+ * @param $type
+ *   Type of the object e.g. supporter or donation.
+ * @param $key
+ *   The object identifier.
+ *
+ * @return
+ *   The object if it exists, FALSE if not.
+ */
+function salsa_api_get_object($type, $key) {
+  $query = array(
+    '#script' => 'getObject.sjs',
+    '#tables' => $type,
+    '#fields' => $key,
+  );
+  $return = salsa_api_query($query);
+
+  // Get the actual object and convert it.
+  if (isset($return[$type]['item']['key'])) {
+    return (object)$return[$type]['item'];
+  }
+  return FALSE;
+}
+
+/**
+ * Load objects from Salsa.
+ *
+ * @param $type
+ *   Type of the objects e.g. supporter or donation.
+ * @param $conditions
+ *   Query conditions as a encoded query string or an array.
+ * @param $query_info
+ *   Query info.
+ *
+ * @return
+ *   The object if it exists, FALSE if not.
+ */
+function salsa_api_get_objects($type, $conditions = NULL, array $query_info = array()) {
+  $query = array(
+    '#script' => 'getObjects.sjs',
+    '#tables' => $type,
+    '#condition' => $conditions,
+  ) + $query_info;
+  $return = salsa_api_query($query);
+
+  // If there are any items, convert them to objects and return.
+  if ($return[$type]['count'] > 0) {
+    $objects = array();
+
+    // If count is 1, item is the object.
+    if ($return[$type]['count'] == 1) {
+      $return[$type]['item'] = array($return[$type]['item']);
+    }
+
+    foreach ($return[$type]['item'] as $item) {
+      $objects[$item['key']] = (object)$item;
+    }
+    return $objects;
+  }
+  return array();
 }
