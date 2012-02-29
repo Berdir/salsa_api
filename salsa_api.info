@@ -1,5 +1,5 @@
 name = Salsa API
-description = Experimental Drupal 7.x version of the salsa_api module, which provides an API to allow drupal to communicate with Democracy in Action's Salsa Member Database. Use at your own risk!
+description = Provides an API to allow Drupal to communicate with Democracy in Action's Salsa Member Database.
 core = 7.x
 package = Salsa
 configure = admin/config/services/salsa
