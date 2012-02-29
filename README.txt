@@ -1,5 +1,5 @@
 
-This is a HIGHLY EXPERIMENTAL Drupal 7 port of the salsa_api module, created to facilitate development of a Drupal 7 version of the salsa_supporters module. IT IS NOT INTENDED FOR PRODUCTION USE -- USE AT YOUR OWN RISK!
+This is an under-development Drupal 7 port of the salsa_api module, created to facilitate development of a Drupal 7 version of the salsa_supporters module. Use with caution on production sites.
 
 The original README.txt from the Drupal 6 version follows:
 
